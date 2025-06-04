@@ -3,185 +3,408 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp API Authentication</title>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <title>WhatsApp API - ZumLabs</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .status-card {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .status-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
             text-align: center;
         }
-        #qrcode {
-            margin: 20px auto;
-            width: 256px;
-            height: 256px;
+        
+        .status-item h3 {
+            margin-bottom: 10px;
+            color: #495057;
         }
-        .status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-        .authenticated {
-            background-color: #4CAF50;
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
             color: white;
         }
-        .awaiting {
-            background-color: #FFC107;
+        
+        .status-ready { background-color: #28a745; }
+        .status-qr_code { background-color: #ffc107; color: #000; }
+        .status-disconnected { background-color: #dc3545; }
+        .status-error { background-color: #dc3545; }
+        
+        .form-group {
+            margin-bottom: 20px;
         }
-        .disconnected {
-            background-color: #F44336;
-            color: white;
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #495057;
         }
-        #logoutBtn {
-            padding: 10px 20px;
-            background-color: #F44336;
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 5px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
             cursor: pointer;
-            margin: 0 auto;
+            transition: transform 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
         }
-        #qrcode-container {
-            margin: 20px auto;
-            width: 256px;
-            height: 256px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid #eee;
+        
+        .btn:hover {
+            transform: translateY(-2px);
         }
-        #qrcode {
-            max-width: 100%;
-            max-height: 100%;
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+        
+        .qr-container {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        #qrCode {
+            max-width: 300px;
+            max-height: 300px;
+        }
+        
+        .response {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-<h1>WhatsApp API Authentication</h1>
-<div id="status" class="status"></div>
-<div id="qrcode-container">
-    <canvas id="qrcode"></canvas>
-</div>
-<div id="connection-info"></div>
-<div id="controls" style="margin-top: 20px;">
-    <button id="logoutBtn">Logout from WhatsApp</button>
-</div>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 WhatsApp API</h1>
+            <p>Professional WhatsApp Web API by ZumLabs</p>
+        </div>
 
-<script>
-    const statusElement = document.getElementById('status');
-    const qrcodeElement = document.getElementById('qrcode');
-    const qrcodeContainer = document.getElementById('qrcode-container');
-    const connectionInfoElement = document.getElementById('connection-info');
-    const logoutBtn = document.getElementById('logoutBtn');
+        <!-- Status Section -->
+        <div class="card">
+            <h2>📊 System Status</h2>
+            <div class="status-card" id="statusContainer">
+                <div class="status-item">
+                    <h3>Connection Status</h3>
+                    <span class="status-badge status-disconnected" id="connectionStatus">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <h3>Client Ready</h3>
+                    <span class="status-badge status-disconnected" id="readyStatus">No</span>
+                </div>
+                <div class="status-item">
+                    <h3>Last Updated</h3>
+                    <span id="lastUpdated">Never</span>
+                </div>
+            </div>
+            <button class="btn btn-info" onclick="checkStatus()">🔄 Refresh Status</button>
+            <button class="btn" onclick="getQRCode()">📱 Show QR Code</button>
+            <button class="btn btn-danger" onclick="logout()">🚪 Logout</button>
+        </div>
 
-    // Function to update the status display
-    function updateStatus(data) {
-        statusElement.textContent = `Status: ${data.status}`;
-        statusElement.className = 'status';
+        <div class="grid">
+            <!-- QR Code Section -->
+            <div class="card">
+                <h2>📱 QR Code</h2>
+                <div class="qr-container">
+                    <div id="qrContainer" style="display: none;">
+                        <p>Scan this QR code with WhatsApp:</p>
+                        <img id="qrCode" alt="QR Code">
+                    </div>
+                    <div id="qrMessage">
+                        <p>Click "Show QR Code" to display QR code for authentication.</p>
+                    </div>
+                </div>
+            </div>
 
-        if (data.status === 'authenticated') {
-            statusElement.classList.add('authenticated');
-            clearQRCode();
-            connectionInfoElement.innerHTML = `
-                    <p>WhatsApp is connected and ready to use!</p>
-                    <p>API Endpoint: <code>/send-message</code></p>
-                `;
-            logoutBtn.style.display = 'block';
+            <!-- Send Message Section -->
+            <div class="card">
+                <h2>💬 Send Message</h2>
+                <form onsubmit="sendMessage(event)">
+                    <div class="form-group">
+                        <label for="phoneNumber">Phone Number:</label>
+                        <input type="text" id="phoneNumber" placeholder="628123456789 or 628123456789@c.us" required>
+                        <small>Format: 628123456789 (without + and spaces)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message:</label>
+                        <textarea id="message" rows="4" placeholder="Enter your message here..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn">📤 Send Message</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Response Section -->
+        <div class="card">
+            <h2>📋 API Response</h2>
+            <div class="loading" id="loading">⏳ Processing...</div>
+            <div class="response" id="response">Ready to use the API...</div>
+        </div>
+
+        <!-- API Documentation -->
+        <div class="card">
+            <h2>📚 API Documentation</h2>
+            <h3>Available Endpoints:</h3>
+            <ul>
+                <li><strong>GET /api/status</strong> - Check WhatsApp connection status</li>
+                <li><strong>GET /api/qr</strong> - Get QR code for authentication</li>
+                <li><strong>POST /api/send-message</strong> - Send a message</li>
+                <li><strong>POST /api/logout</strong> - Logout from WhatsApp</li>
+                <li><strong>GET /health</strong> - Server health check</li>
+            </ul>
+            
+            <h3>Example Usage:</h3>
+            <div class="response">
+POST /api/send-message
+Content-Type: application/json
+
+{
+    "number": "628123456789",
+    "message": "Hello from WhatsApp API!"
+}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval;
+
+        // Auto-refresh status every 5 seconds
+        function startAutoRefresh() {
+            refreshInterval = setInterval(checkStatus, 5000);
         }
-        else if (data.status === 'awaiting_qr_scan') {
-            statusElement.classList.add('awaiting');
-            generateQRCode(data.qrCode);
-            connectionInfoElement.innerHTML = `
-                    <p>Scan this QR code with your WhatsApp mobile app</p>
-                    <p>Make sure your phone has internet connection</p>
-                `;
-            logoutBtn.style.display = 'none';
-        }
-        else {
-            statusElement.classList.add('disconnected');
-            connectionInfoElement.innerHTML = `
-                    <p>Initializing WhatsApp connection...</p>
-                `;
-            logoutBtn.style.display = 'none';
-        }
-    }
 
-    // Function to generate QR code
-    function generateQRCode(qrData) {
-        clearQRCode();
-        document.getElementById('qrcode-container').style.display = "block";
-        QRCode.toCanvas(qrcodeElement, qrData, {
-            width: 600,
-            margin: 2,
-            color: {
-                dark: '#000000',
-                light: '#ffffff'
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
             }
-        }, function (error) {
-            if (error) {
-                console.error('QR Code generation error:', error);
-                qrcodeContainer.innerHTML = '<p>Error generating QR code</p>';
+        }
+
+        async function makeRequest(url, options = {}) {
+            const loading = document.getElementById('loading');
+            const response = document.getElementById('response');
+            
+            loading.style.display = 'block';
+            
+            try {
+                const res = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                
+                const data = await res.json();
+                response.textContent = JSON.stringify(data, null, 2);
+                return data;
+            } catch (error) {
+                response.textContent = `Error: ${error.message}`;
+                throw error;
+            } finally {
+                loading.style.display = 'none';
             }
-        });
-    }
+        }
 
-    // Function to clear QR code
-    function clearQRCode() {
-        const ctx = qrcodeElement.getContext('2d');
-        ctx.clearRect(0, 0, qrcodeElement.width, qrcodeElement.height);
-        document.getElementById('qrcode-container').style.display = "none";
-    }
+        async function checkStatus() {
+            try {
+                const data = await makeRequest('/api/status');
+                updateStatusDisplay(data);
+            } catch (error) {
+                console.error('Failed to check status:', error);
+            }
+        }
 
-    // Logout functionality
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            logoutBtn.disabled = true;
-            logoutBtn.textContent = 'Logging out...';
-
-            const response = await fetch('/logout', {
-                method: 'POST'
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                alert('Successfully logged out! The page will refresh to show QR code.');
-                setTimeout(() => location.reload(), 1000);
+        function updateStatusDisplay(data) {
+            const connectionStatus = document.getElementById('connectionStatus');
+            const readyStatus = document.getElementById('readyStatus');
+            const lastUpdated = document.getElementById('lastUpdated');
+            
+            if (data.success) {
+                connectionStatus.textContent = data.status;
+                connectionStatus.className = `status-badge status-${data.status}`;
+                
+                readyStatus.textContent = data.isReady ? 'Yes' : 'No';
+                readyStatus.className = `status-badge ${data.isReady ? 'status-ready' : 'status-disconnected'}`;
+                
+                lastUpdated.textContent = new Date(data.timestamp).toLocaleString();
             } else {
-                alert('Logout failed. Please try again.');
+                connectionStatus.textContent = 'Error';
+                connectionStatus.className = 'status-badge status-error';
             }
-        } catch (error) {
-            console.error('Logout error:', error);
-            alert('An error occurred during logout');
-        } finally {
-            logoutBtn.disabled = false;
-            logoutBtn.textContent = 'Logout from WhatsApp';
         }
-    });
 
-    // Poll the status endpoint every 2 seconds
-    async function checkStatus() {
-        try {
-            const response = await fetch('/status');
-            const data = await response.json();
-            updateStatus(data);
-
-            // If not authenticated, keep polling
-            if (data.status !== 'authenticated') {
-                setTimeout(checkStatus, 2000);
+        async function getQRCode() {
+            try {
+                const data = await makeRequest('/api/qr');
+                
+                if (data.success && data.qr) {
+                    document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data.qr)}`;
+                    document.getElementById('qrContainer').style.display = 'block';
+                    document.getElementById('qrMessage').style.display = 'none';
+                } else {
+                    document.getElementById('qrContainer').style.display = 'none';
+                    document.getElementById('qrMessage').innerHTML = `<p>${data.message || 'No QR code available'}</p>`;
+                    document.getElementById('qrMessage').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Failed to get QR code:', error);
             }
-        } catch (error) {
-            console.error('Error checking status:', error);
-            statusElement.textContent = 'Error connecting to API server';
-            statusElement.className = 'status disconnected';
-            setTimeout(checkStatus, 5000);
         }
-    }
 
-    // Start checking status when page loads
-    document.addEventListener('DOMContentLoaded', checkStatus);
-</script>
+        async function sendMessage(event) {
+            event.preventDefault();
+            
+            const number = document.getElementById('phoneNumber').value;
+            const message = document.getElementById('message').value;
+            
+            try {
+                await makeRequest('/api/send-message', {
+                    method: 'POST',
+                    body: JSON.stringify({ number, message })
+                });
+            } catch (error) {
+                console.error('Failed to send message:', error);
+            }
+        }
+
+        async function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    await makeRequest('/api/logout', { method: 'POST' });
+                    // Hide QR code after logout
+                    document.getElementById('qrContainer').style.display = 'none';
+                    document.getElementById('qrMessage').innerHTML = '<p>Logged out. Click "Show QR Code" to authenticate again.</p>';
+                    document.getElementById('qrMessage').style.display = 'block';
+                } catch (error) {
+                    console.error('Failed to logout:', error);
+                }
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStatus();
+            startAutoRefresh();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
+        });
+    </script>
 </body>
 </html>
