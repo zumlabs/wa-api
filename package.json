@@ -5,7 +5,9 @@
   "main": "api/server.js",
   "scripts": {
     "start": "node api/server.js",
-    "dev": "node api/server.js"
+    "dev": "node api/server.js",
+    "build": "echo 'Build complete'",
+    "postinstall": "echo 'Installation complete'"
   },
   "dependencies": {
     "whatsapp-web.js": "^1.18.4",

@@ -1,25 +1,49 @@
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
-const WhatsAppClient = require('../lib/whatsapp-client');
 
+// Initialize express first
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Basic middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Initialize WhatsApp client
-const whatsappClient = new WhatsAppClient();
+// Initialize cors if available
+try {
+  const cors = require('cors');
+  app.use(cors());
+} catch (error) {
+  console.warn('CORS not available, proceeding without it');
+}
 
-// API Routes
+// Initialize WhatsApp client with error handling
+let whatsappClient = null;
+let WhatsAppClient = null;
+
+try {
+  WhatsAppClient = require('../lib/whatsapp-client');
+  whatsappClient = new WhatsAppClient();
+  console.log('WhatsApp client initialized successfully');
+} catch (error) {
+  console.error('Failed to initialize WhatsApp client:', error.message);
+  console.log('Server will start without WhatsApp functionality');
+}
+
+// API Routes with error handling
 app.get('/api/status', async (req, res) => {
   try {
+    if (!whatsappClient) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'WhatsApp client not available',
+        status: 'unavailable'
+      });
+    }
+    
     const status = await whatsappClient.getStatus();
     res.json(status);
   } catch (error) {
@@ -33,6 +57,13 @@ app.get('/api/status', async (req, res) => {
 
 app.post('/api/send-message', async (req, res) => {
   try {
+    if (!whatsappClient) {
+      return res.status(503).json({
+        success: false,
+        error: 'WhatsApp client not available'
+      });
+    }
+
     const { number, message } = req.body;
     
     if (!number || !message) {
@@ -54,6 +85,13 @@ app.post('/api/send-message', async (req, res) => {
 
 app.post('/api/logout', async (req, res) => {
   try {
+    if (!whatsappClient) {
+      return res.status(503).json({
+        success: false,
+        error: 'WhatsApp client not available'
+      });
+    }
+
     const result = await whatsappClient.logout();
     res.json(result);
   } catch (error) {
@@ -66,6 +104,13 @@ app.post('/api/logout', async (req, res) => {
 
 app.get('/api/qr', async (req, res) => {
   try {
+    if (!whatsappClient) {
+      return res.status(503).json({
+        success: false,
+        error: 'WhatsApp client not available'
+      });
+    }
+
     const qr = await whatsappClient.getQR();
     res.json(qr);
   } catch (error) {
@@ -81,7 +126,8 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    whatsappAvailable: !!whatsappClient
   });
 });
 
@@ -110,13 +156,17 @@ app.use((req, res) => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...');
-  await whatsappClient.destroy();
+  if (whatsappClient && typeof whatsappClient.destroy === 'function') {
+    await whatsappClient.destroy();
+  }
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully...');
-  await whatsappClient.destroy();
+  if (whatsappClient && typeof whatsappClient.destroy === 'function') {
+    await whatsappClient.destroy();
+  }
   process.exit(0);
 });
 
@@ -124,6 +174,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`WhatsApp API Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log(`Web interface: http://localhost:${PORT}`);
+  console.log(`WhatsApp client: ${whatsappClient ? 'Available' : 'Not available'}`);
 });
 
 module.exports = app;
