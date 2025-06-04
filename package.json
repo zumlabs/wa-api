@@ -1,22 +1,17 @@
 {
   "name": "whatsapp-api",
   "version": "1.0.0",
-  "description": "WhatsApp Web API using whatsapp-web.js",
-  "main": "api/server.js",
+  "main": "index.js",
   "scripts": {
     "start": "node api/server.js",
-    "dev": "node api/server.js",
-    "build": "echo 'Build complete'",
-    "postinstall": "echo 'Installation complete'"
+    "dev": "vercel dev"
   },
   "dependencies": {
-    "whatsapp-web.js": "^1.18.4",
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "express": "^5.1.0",
+    "morgan": "^1.10.0",
+    "whatsapp-web.js": "^1.18.4"
   },
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "author": "ZumLabs",
-  "license": "MIT"
+  "devDependencies": {
+    "vercel": "^28.16.11"
+  }
 }
