@@ -4,7 +4,7 @@ const morgan = require('morgan');
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 const router = Router();
 
 router.get('/', (req, res) => {
@@ -17,6 +17,7 @@ router.post('/logout', require('./logout'));
 app.use(morgan('dev'));
 app.use(router)
 
-app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log(`🚀 WhatsApp API ready!`);
 });
