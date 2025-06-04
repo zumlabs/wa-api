@@ -1,0 +1,17 @@
+{
+  "name": "whatsapp-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node api/server.js",
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "morgan": "^1.10.0",
+    "whatsapp-web.js": "^1.18.4"
+  },
+  "devDependencies": {
+    "vercel": "^28.16.11"
+  }
+}
